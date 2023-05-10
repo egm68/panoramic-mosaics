@@ -889,6 +889,11 @@ def draw_center_point(image, x,y, w,h, color, thickness):
     newy = (y+h)//2
     return cv2.rectangle(image, (newx,newy), (newx+rect_size, newy+rect_size), color, rect_size)
 
+def draw_center_point_updated(image, x,y, w,h, color, thickness):
+    newx = ((w-x)//2)+x
+    newy = ((h-y)//2)+y
+    return cv2.circle(image,(newx,newy), 5, color, -1)
+
 def draw_box_corners(image, x,y, w,h, color, thickness):
     rect_size =  2  # size of boxes that denote corners
     image = cv2.rectangle(image, (x,y), (x+rect_size, y+rect_size), color, rect_size)
@@ -963,7 +968,7 @@ image with bounding boxes for all objects at from given indices
 
 """
 def draw_all_bounding_boxes_for_given_indices(index_list, frames_timestamps_arr, detic_dict, panorama_image,
-                                              new_transf_list, anchorX, anchorY, colors_list, color_scheme, thickness, box_type='center_dot_updated', object_subset={}):
+                                              transf_index_dict, dist_index, anchorX, anchorY, colors_list, color_scheme, thickness, box_type='center_dot_updated', object_subset={}):
     image = panorama_image.copy() #so it doesn't draw directly on the panorama in case the one without bounding boxes is needed later
     last_dot = {}
     obj_locations = {} #this is the dictionary tracks keeps a record of obj locations over all timesteps
@@ -981,16 +986,16 @@ def draw_all_bounding_boxes_for_given_indices(index_list, frames_timestamps_arr,
             y = int(detic_dict[index]["values"][i]["xyxyn"][1] * 428)
             h = int(detic_dict[index]["values"][i]["xyxyn"][3] * 428)
 
-            if f == 0:  # first timestamp --> coord plane
+            if index_list[f] == dist_index:  # dst image --> coord plane
                 x = x + anchorX
                 w = w + anchorX
                 y = y + anchorY
                 h = h + anchorY
             else:
-                x = warp_point(x, y, new_transf_list[f-1])[0]
-                y = warp_point(x, y, new_transf_list[f-1])[1]
-                w = warp_point(w, h, new_transf_list[f-1])[0]
-                h = warp_point(w, h, new_transf_list[f-1])[1]
+                x = warp_point(x, y, transf_index_dict[index_list[f]])[0]
+                y = warp_point(x, y, transf_index_dict[index_list[f]])[1]
+                w = warp_point(w, h, transf_index_dict[index_list[f]])[0]
+                h = warp_point(w, h, transf_index_dict[index_list[f]])[1]
 
             start_point = (x, y)
             end_point = (w, h)
@@ -1015,7 +1020,7 @@ def draw_all_bounding_boxes_for_given_indices(index_list, frames_timestamps_arr,
                       image = draw_line(image, (x+w)//2, (y+h)//2, xnew,ynew, new_color, thickness//2)
                   last_dot[obj_name] = [(x+w)//2, (y+h)//2]
               elif box_type == 'center_dot_lined_updated':
-                image = draw_center_point(image, x,y, w,h, new_color, thickness)
+                image = draw_center_point_updated(image, x,y, w,h, new_color, thickness)
                 #3 cases (in order addressed below, using duplicate to mean there are multiple in the same timestep): 
                   #1) duplicate object (so we've already seen it), 
                   #2) non-duplicate object we've already seen in a previous timestep, 
@@ -1034,15 +1039,19 @@ def draw_all_bounding_boxes_for_given_indices(index_list, frames_timestamps_arr,
                     if duplicate_num == 2: #if this is the first duplicate for this object in this timestep (case 1b1)
                       current_loc = [(x+w)//2, (y+h)//2]
                       object_dict = obj_locations.pop(obj_name)
-                      duplicate = object_dict.pop()
-                      prev = object_dict.pop()
-                      #determine which of the two duplicates is closer to the location of that obj in the previous frame 
-                      closer, further = get_closer_further(current_loc, duplicate, prev)
-                      if len(object_dict) == 0:
-                        obj_locations[obj_name + "_" + str(1)] = object_dict = [prev, closer]
+                      if len(object_dict) == 1:
+                        obj_locations[obj_name + "_" + str(1)] = object_dict
+                        obj_locations[obj_name + "_" + str(2)] = [current_loc]
                       else:
-                        obj_locations[obj_name + "_" + str(1)] = object_dict.append(prev).append(closer) 
-                      obj_locations[obj_name + "_" + str(duplicate_num)] = [further]
+                        duplicate = object_dict.pop() 
+                        prev = object_dict.pop()
+                        #determine which of the two duplicates is closer to the location of that obj in the previous frame 
+                        closer, further = get_closer_further(current_loc, duplicate, prev)
+                        if len(object_dict) == 0:
+                          obj_locations[obj_name + "_" + str(1)] = [prev, closer]
+                        else:
+                          obj_locations[obj_name + "_" + str(1)] = object_dict.append(prev).append(closer) 
+                        obj_locations[obj_name + "_" + str(duplicate_num)] = [further]
                     else: #if this is NOT the first duplicate for this object in this timestep (case 1b2)
                       current_loc = [(x+w)//2, (y+h)//2]
                       #pop out all other duplicates and prev from 1
@@ -1102,7 +1111,7 @@ def draw_all_bounding_boxes_for_given_indices(index_list, frames_timestamps_arr,
               if obj_name not in color_object_dict:
                 color_object_dict[obj_name] = colors_list.pop() 
               new_color = rgb_to_bgr(hex_to_rgb(color_object_dict[obj_name])) + [255] 
-              image = draw_center_point(image, x,y, w,h, new_color, thickness)
+              image = draw_center_point_updated(image, x,y, w,h, new_color, thickness)
               if obj_name in current_frame_obj_count: #case 1
                 current_frame_obj_count[obj_name] = current_frame_obj_count[obj_name] + 1
                 duplicate_num = current_frame_obj_count[obj_name]
@@ -1112,29 +1121,45 @@ def draw_all_bounding_boxes_for_given_indices(index_list, frames_timestamps_arr,
                   obj_locations[obj_name + "_" + str(duplicate_num)] = [[(x+w)//2, (y+h)//2]]
                 else:
                   if duplicate_num == 2: #if this is the first duplicate for this object in this timestep (case 1b1)
-                    current_loc = [(x+w)//2, (y+h)//2]
-                    object_dict = obj_locations.pop(obj_name)
-                    duplicate = object_dict.pop()
-                    prev = object_dict.pop()
-                    #determine which of the two duplicates is closer to the location of that obj in the previous frame 
-                    closer, further = get_closer_further(current_loc, duplicate, prev)
-                    if len(object_dict) == 0:
-                      obj_locations[obj_name + "_" + str(1)] = object_dict = [prev, closer]
-                    else:
-                      obj_locations[obj_name + "_" + str(1)] = object_dict.append(prev).append(closer) 
-                    obj_locations[obj_name + "_" + str(duplicate_num)] = [further]
-                  else: #if this is NOT the first duplicate for this object in this timestep (case 1b2)
+                      current_loc = [(x+w)//2, (y+h)//2]
+                      duplicate_check_list = []
+                      for k in range(len(list(obj_locations.keys()))):
+                        duplicate_check_list.append(list(obj_locations.keys())[k][0:-2])
+                      if obj_name in obj_locations: #case 2
+                        if len(obj_locations[obj_name]) == 1:
+                          obj_locations[obj_name + "_" + str(1)] = obj_locations.pop(obj_name)
+                          obj_locations[obj_name + "_" + str(2)] = [current_loc]
+                        else:
+                          duplicate = obj_locations[obj_name].pop() 
+                          prev = obj_locations[obj_name][-1]
+                          #determine which of the two duplicates is closer to the location of that obj in the previous frame 
+                          closer, further = get_closer_further(current_loc, duplicate, prev)
+                          obj_locations[obj_name + "_" + str(1)] = obj_locations.pop(obj_name)
+                          obj_locations[obj_name + "_" + str(1)].append(closer)
+                          obj_locations[obj_name + "_" + str(duplicate_num)] = [further]
+                      elif obj_name in duplicate_check_list: #was duplicate in prev timestep
+                        if len(obj_locations[obj_name + "_" + str(1)]) == 1:
+                          obj_locations[obj_name + "_" + str(1)] = obj_locations.pop(obj_name)
+                          obj_locations[obj_name + "_" + str(2)] = [current_loc]
+                        else:
+                          duplicate = obj_locations[obj_name + "_" + str(1)].pop() 
+                          prev = obj_locations[obj_name + "_" + str(1)][-1]
+                          #determine which of the two duplicates is closer to the location of that obj in the previous frame 
+                          closer, further = get_closer_further(current_loc, duplicate, prev)
+                          obj_locations[obj_name + "_" + str(1)] = obj_locations.pop(obj_name + "_" + str(1))
+                          obj_locations[obj_name + "_" + str(1)].append(closer)
+                          obj_locations[obj_name + "_" + str(duplicate_num)] = [further]
+                  elif duplicate_num == 3: #if this is NOT the first duplicate for this object in this timestep (case 1b2)
                     current_loc = [(x+w)//2, (y+h)//2]
                     #pop out all other duplicates and prev from 1
-                    duplicates = []
-                    for m in range(1, duplicate_num):
-                      duplicates.append(obj_locations.pop(obj_name + "_" + str(m)).pop())
-                    prev = obj_locations.pop(obj_name + "_" + str(1)).pop()
-                    array_of_points = duplicates.append(current_loc)
+                    duplicate_1 = obj_locations[obj_name + "_" + str(1)].pop()
+                    duplicate_2 = obj_locations[obj_name + "_" + str(2)].pop()
+                    prev = obj_locations[obj_name + "_" + str(1)][-1]
+                    array_of_points = [duplicate_1, duplicate_2, current_loc]
                     closest, others_array, closest_index = get_closest(array_of_points, prev)
-                    obj_locations[obj_name + "_" + str(1)].append(prev).append(closest) 
-                    for n in range(2, duplicate_num + 1):
-                      obj_locations[obj_name + "_" + str(n)] = [others_array[n-2]] 
+                    obj_locations[obj_name + "_" + str(1)].append(closest) 
+                    obj_locations[obj_name + "_" + str(2)] = [others_array[0]] 
+                    obj_locations[obj_name + "_" + str(3)] = [others_array[1]] 
               else:
                 current_frame_obj_count[obj_name] = 1
                 duplicate_check_list = []
