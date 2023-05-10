@@ -150,9 +150,9 @@ def warpTwoImages(img1, img2, H):
 
 
 #save array of frames to video 
-def save_to_video(output_frame_arr, fps):
+def save_to_video(output_frame_arr, fps, output_path):
   height,width,layers=output_frame_arr[0].shape
-  video=cv2.VideoWriter(filename = '/content/interval_five_later.avi',fourcc = 0,fps = fps,frameSize = (760, 428))
+  video=cv2.VideoWriter(filename = output_path,fourcc = 0x7634706d,fps = fps,frameSize = (width, height))
   for j in range(len(output_frame_arr)):
     video.write(output_frame_arr[j])
   video.release()
@@ -167,6 +167,33 @@ def resize_all(pano_frames_arr, width, height):
     resized_pano_arr.append(cv2.resize(pano_frames_arr[i], (width, height)))
   return resized_pano_arr
 
+
+def classic_bounding_boxes(main_frame_arr, detic_dict, frames_timestamps_arr, index_range):
+  color = (0, 0, 255)
+  thickness = 2
+  output_frames = []
+  for j in range(len(main_frame_arr)):  # for each frame
+    image = main_frame_arr[j].copy()
+    index = next((i for i, obj in enumerate(detic_dict) if obj['timestamp'] == frames_timestamps_arr[index_range[0] + j]), -1)
+    for i in range(len(detic_dict[index]["values"])):  # for each detected object
+      x = int(detic_dict[index]["values"][i]["xyxyn"][0] * 760)
+      w = int(detic_dict[index]["values"][i]["xyxyn"][2] * 760)
+      y = int(detic_dict[index]["values"][i]["xyxyn"][1] * 428)
+      h = int(detic_dict[index]["values"][i]["xyxyn"][3] * 428)
+      start_point = (x, y)
+      end_point = (w, h)
+
+      # draw object bounding box
+      image = cv2.rectangle(image, start_point, end_point, color, thickness)
+
+      # Draw red background rectangle
+      image = cv2.rectangle(image, (x, y-15), (x + (w - x), y), (0,0,255), -1)  # TODO: figure this out
+
+      # Add text
+      image = cv2.putText(image, detic_dict[index]["values"][i]["label"], (x + 2,y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (255,255,255), 1)
+    output_frames.append(image)
+    
+  return output_frames
 
 
 #given two frames, this function warps them to the same plane and translates them to their proper position on a shared background by adding padding where needed
