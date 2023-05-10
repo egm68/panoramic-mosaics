@@ -14,9 +14,19 @@ from shapely.geometry import Polygon
 from shapely.geometry import Point
 from shapely.ops import unary_union
 from numba import cuda, jit, njit
+import pkg_resources
 
 
+def get_demo_video_data():
+    video_path = pkg_resources.resource_filename(__name__, "data/avis/2023.03.29-17.39.21-main.avi")
+    main_frame_arr = video_to_frame_arr(video_path)
+    return main_frame_arr
 
+def get_demo_detic_data():
+    data_path = pkg_resources.resource_filename(__name__, "data/object_detection/2023.03.29-17.39.21-detic:image.json")
+    with open(data_path, 'r') as j:
+     detic_dict = json.loads(j.read())
+    return detic_dict
 
 #video from camera starts with 760 width 428 height
 def video_to_frame_arr(video_path):
