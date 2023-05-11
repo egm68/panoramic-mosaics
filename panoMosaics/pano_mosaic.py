@@ -28,6 +28,35 @@ def get_demo_detic_data():
      detic_dict = json.loads(j.read())
     return detic_dict
 
+def get_sfs_arr(main_frame_arr):
+  frame_sfs_arr = []
+  sfs = 0
+  for i in range(len(main_frame_arr)):
+    frame_sfs_arr.append(sfs)
+    sfs = sfs + (1/15)
+  return frame_sfs_arr
+
+def get_timestamp_arr(detic_dict):
+  timestamps_sfs_arr = []
+  start_timestamp = detic_dict[0]["timestamp"]
+  for i in range(len(detic_dict)):
+    current_timestamp = detic_dict[i]["timestamp"]
+    sec_from_start = get_sec_from_start(current_timestamp, start_timestamp)
+    timestamps_sfs_arr.append(sec_from_start)
+  return timestamps_sfs_arr
+
+def get_frame_timestamps_arr(main_frame_arr, detic_dict, frame_sfs_arr, timestamps_sfs_arr):
+  frames_timestamps_arr = []
+  arr = timestamps_sfs_arr
+  n = len(arr)
+  for i in range(len(main_frame_arr)):
+    target = frame_sfs_arr[i]
+    closest = findClosest(arr, n, target)
+    target_idx = timestamps_sfs_arr.index(closest)
+    timestamp = detic_dict[target_idx]["timestamp"]
+    frames_timestamps_arr.append(timestamp)
+  return frames_timestamps_arr
+
 #video from camera starts with 760 width 428 height
 def video_to_frame_arr(video_path):
   cap = cv2.VideoCapture(video_path)
@@ -42,8 +71,6 @@ def video_to_frame_arr(video_path):
     # read next frame
     success, img = cap.read()
   return output_arr
-
-
 
 
 def get_keypoints_descriptors(image):
