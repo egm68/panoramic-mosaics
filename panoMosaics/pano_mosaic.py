@@ -1056,7 +1056,11 @@ def draw_all_bounding_boxes_for_given_indices(index_list, frames_timestamps_arr,
 
             if color_scheme == 'time':
               #draw object bounding box (draw_box, draw_box_frame, draw_box_corners)
-              new_color = box_color(colors_list, f, len(index_list))
+              if obj_name not in color_object_dict:
+                new_color = box_color(colors_list, f, len(index_list))
+                color_object_dict[obj_name] = new_color
+              else:
+                new_color = box_color(colors_list, f, len(index_list))
               
               if box_type == 'box':
                   image = draw_box(image, x,y, w,h, new_color, thickness)
@@ -1279,19 +1283,21 @@ def draw_all_bounding_boxes_for_given_indices(index_list, frames_timestamps_arr,
 
           
           #current_frame_obj_counts_all.append(current_frame_obj_count)
-
-    #now we draw all lines between dots 
-    if len(index_list) > 1:
-      for i in range(len(list(obj_locations.keys()))): #for each distinct object in the video
-        if len(obj_locations[list(obj_locations.keys())[i]]) == 1:
-          continue
-        else:
-          for j in range(1, len(obj_locations[list(obj_locations.keys())[i]])): #for each location of object with label list(obj_locations.keys())[i] 
-            obj_name = list(obj_locations.keys())[i]
-            if list(obj_locations.keys())[i][-2] == '_':
-              obj_name = obj_name[0:-2]
-            arrow_color = rgb_to_bgr(hex_to_rgb(color_object_dict[obj_name])) + [255]
-            image = draw_arrow(image, obj_locations[list(obj_locations.keys())[i]][j-1][0], obj_locations[list(obj_locations.keys())[i]][j-1][1], obj_locations[list(obj_locations.keys())[i]][j][0], obj_locations[list(obj_locations.keys())[i]][j][1], arrow_color, 2)
+    if box_type == 'arrow':
+      if len(index_list) > 1:
+        for i in range(len(list(obj_locations.keys()))): #for each distinct object in the video
+          if len(obj_locations[list(obj_locations.keys())[i]]) == 1:
+            continue
+          else:
+            for j in range(1, len(obj_locations[list(obj_locations.keys())[i]])): #for each location of object with label list(obj_locations.keys())[i] 
+              obj_name = list(obj_locations.keys())[i]
+              if list(obj_locations.keys())[i][-2] == '_':
+                obj_name = obj_name[0:-2]
+              if color_scheme == 'object':
+                arrow_color = rgb_to_bgr(hex_to_rgb(color_object_dict[obj_name])) + [255]
+              else:
+                arrow_color = color_object_dict[obj_name]
+              image = draw_arrow(image, obj_locations[list(obj_locations.keys())[i]][j-1][0], obj_locations[list(obj_locations.keys())[i]][j-1][1], obj_locations[list(obj_locations.keys())[i]][j][0], obj_locations[list(obj_locations.keys())[i]][j][1], arrow_color, 2)
 
 
     return image
