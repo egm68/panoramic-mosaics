@@ -995,7 +995,7 @@ image with bounding boxes for all objects at from given indices
 
 """
 def draw_all_bounding_boxes_for_given_indices(index_list, frames_timestamps_arr, detic_dict, panorama_image,
-                                              transf_index_dict, dist_index, anchorX, anchorY, colors_list, color_scheme, thickness, box_type='center_dot_updated', object_subset={}):
+                                              transf_index_dict, dist_index, anchorX, anchorY, colors_list, color_scheme, thickness, box_type='center_dot_lined_updated', object_subset={}):
     image = panorama_image.copy() #so it doesn't draw directly on the panorama in case the one without bounding boxes is needed later
     last_dot = {}
     obj_locations = {} #this is the dictionary tracks keeps a record of obj locations over all timesteps
