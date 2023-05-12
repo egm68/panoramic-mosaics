@@ -41,4 +41,4 @@ Output:
 Try our demo on Colab [here](https://colab.research.google.com/drive/1a_U4QmuLPnrFZvHjSu_vRImLHaS63rKC?usp=sharing).
 
 ### Want to learn more?
-Read our project report [here](https://github.com/egm68/panoramic-mosaics/blob/main/panoMosaics_report.pdf). 
+Read our project report [here](https://github.com/egm68/panoramic-mosaics/blob/main/panoMosaics_report.pdf) and watch the accompanying presentation [here](https://youtu.be/Ww96fFR-O4I).
