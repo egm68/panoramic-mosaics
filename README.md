@@ -1,5 +1,5 @@
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1a_U4QmuLPnrFZvHjSu_vRImLHaS63rKC?usp=sharing) [![Paper](https://img.shields.io/badge/read%20the-paper-blueviolet)](https://github.com/egm68/panoramic-mosaics/blob/main/panoMosaics_report.pdf) 
-[![start with why](https://img.shields.io/badge/start%20with-why%3F-brightgreen.svg?style=flat)](https://youtu.be/Ww96fFR-O4I))
+[![start with why](https://img.shields.io/badge/start%20with-why%3F-brightgreen.svg?style=flat)](https://youtu.be/Ww96fFR-O4I)
 
 # panoMosaics
 panoMosaics is a Python library that allows users to create enhanced object detection visualizations that capture multiple timesteps using panoramic mosaics. 
