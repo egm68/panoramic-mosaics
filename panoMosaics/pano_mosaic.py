@@ -17,13 +17,13 @@ from numba import cuda, jit, njit
 import pkg_resources
 
 
-def get_demo_video_data():
-    video_path = pkg_resources.resource_filename(__name__, "https://github.com/egm68/panoramic-mosaics/raw/main/panoMosaics/demo_data/2023.03.29-17.39.21-main.avi")
+def get_demo_video_data(url):
+    video_path = pkg_resources.resource_filename(__name__, url)
     main_frame_arr = video_to_frame_arr(video_path)
     return main_frame_arr
 
-def get_demo_detic_data():
-    data_path = pkg_resources.resource_filename(__name__, "https://raw.githubusercontent.com/egm68/panoramic-mosaics/main/panoMosaics/demo_data/2023.03.29-17.39.21-detic%3Aimage.json")
+def get_demo_detic_data(url):
+    data_path = pkg_resources.resource_filename(__name__, url)
     with open(data_path, 'r') as j:
      detic_dict = json.loads(j.read())
     return detic_dict
