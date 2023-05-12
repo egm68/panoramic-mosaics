@@ -56,6 +56,8 @@ pano_with_bounding_boxes = panoMosaics.draw_all_bounding_boxes_for_given_indices
                                                                      "arrow", [])
 ```
 Output:
+
+
 ![a panoramic mosaic output by above code block](https://github.com/egm68/panoramic-mosaics/blob/main/results/final_pano_frames/pano-with-arrows-colorobject.png?raw=true)
 
 ### Try it out yourself!
