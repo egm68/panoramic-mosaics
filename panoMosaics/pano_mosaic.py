@@ -924,7 +924,7 @@ def stitch_frames(main_frame_arr, detic_dict, src_index_list, dst_index):
   for i in range(len(src_index_list)):
     transf_index_dict[src_index_list[i]] = new_transf_list[i]
 
-  return comp_arr, frames_timestamps_arr, transf_index_dict
+  return comp_arr, frames_timestamps_arr, transf_index_dict, anchorX, anchorY
 
 
 
