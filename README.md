@@ -23,7 +23,7 @@ with open('2023.03.29-17.39.21-detic:image.json', 'r') as j:
      detic_dict = json.loads(j.read())
 
 #stitch panorama using specified frames
-comp_arr, frames_timestamps_arr, transf_index_dict = stitch_frames(main_frame_arr, detic_dict, [160], 196)
+comp_arr, frames_timestamps_arr, transf_index_dict, anchorX, anchorY = stitch_frames(main_frame_arr, detic_dict, [160], 196)
 
 #add object detection visualization  
 pano_with_bounding_boxes = panoMosaics.draw_all_bounding_boxes_for_given_indices([160, 196], frames_timestamps_arr, 
