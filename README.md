@@ -1,4 +1,4 @@
-[![Open In Colab]([https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/16JhR2nhm9J-9KtqmuxGsKMIGL_5c_42N?usp=sharing](https://colab.research.google.com/drive/1a_U4QmuLPnrFZvHjSu_vRImLHaS63rKC?usp=sharing)) [![Paper]() 
+[![Open In Colab(https://colab.research.google.com/assets/colab-badge.svg)]([https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/16JhR2nhm9J-9KtqmuxGsKMIGL_5c_42N?usp=sharing](https://colab.research.google.com/drive/1a_U4QmuLPnrFZvHjSu_vRImLHaS63rKC?usp=sharing)) [![Paper](https://img.shields.io/badge/read%20the-paper-blueviolet)]() 
 
 # panoMosaics
 panoMosaics is a Python library 
