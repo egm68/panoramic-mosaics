@@ -1,7 +1,7 @@
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1a_U4QmuLPnrFZvHjSu_vRImLHaS63rKC?usp=sharing)) [![Paper](https://img.shields.io/badge/read%20the-paper-blueviolet)]() 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1a_U4QmuLPnrFZvHjSu_vRImLHaS63rKC?usp=sharing) [![Paper](https://img.shields.io/badge/read%20the-paper-blueviolet)](https://github.com/egm68/panoramic-mosaics/blob/main/panoMosaics_report.pdf) 
 
 # panoMosaics
-panoMosaics is a Python library 
+panoMosaics is a Python library that allows users to create enhanced object detection visualizations that capture multiple timesteps using panoramic mosaics. 
 
 ### Install
 panoMosaics can be installed using the command
@@ -9,8 +9,7 @@ panoMosaics can be installed using the command
 ```shell
 pip install git+https://github.com/egm68/panoramic-mosaics
 ```
-
-### Usage
+### Usage 
 You can easily visualize the output of an object detection model over several frames, as shown below
 
 ```python
@@ -56,6 +55,10 @@ pano_with_bounding_boxes = panoMosaics.draw_all_bounding_boxes_for_given_indices
                                                                      "#00ff00d9", "#17becf", "#2323d9", '#0e9620'], "object", 2, 
                                                                      "arrow", [])
 ```
+![a panoramic mosaic output by above code block](https://github.com/egm68/panoramic-mosaics/blob/main/results/final_pano_frames/pano-with-arrows-colorobject.png?raw=true)
+
+### Try it out yourself!
+Try out our demo in Colab [here](https://colab.research.google.com/drive/1a_U4QmuLPnrFZvHjSu_vRImLHaS63rKC?usp=sharing).
 
 ### Want to learn more?
-Read our project report: 
+Read our project report [here](https://github.com/egm68/panoramic-mosaics/blob/main/panoMosaics_report.pdf). 
