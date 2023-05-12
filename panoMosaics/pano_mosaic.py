@@ -195,7 +195,14 @@ def resize_all(pano_frames_arr, width, height):
   return resized_pano_arr
 
 
-def classic_bounding_boxes(main_frame_arr, detic_dict, frames_timestamps_arr, index_range):
+def classic_bounding_boxes(main_frame_arr, detic_dict, index_range):
+  #gets the # of seconds from start for each frame
+  frame_sfs_arr = get_sfs_arr(main_frame_arr)
+
+  #match frames with timestamps 
+  timestamps_sfs_arr = get_timestamp_arr(detic_dict)
+  frames_timestamps_arr = get_frame_timestamps_arr(main_frame_arr, detic_dict, frame_sfs_arr, timestamps_sfs_arr)
+
   color = (0, 0, 255)
   thickness = 2
   output_frames = []
