@@ -895,6 +895,37 @@ def stitch_one_at_a_time(indices, main_frame_arr, background_width, background_h
 
   return final_pano_frames
 
+def stitch_frames(main_frame_arr, detic_dict, src_index_list, dst_index):
+  #gets the # of seconds from start for each frame
+  frame_sfs_arr = get_sfs_arr(main_frame_arr)
+
+  #match frames with timestamps 
+  timestamps_sfs_arr = get_timestamp_arr(detic_dict)
+  frames_timestamps_arr = get_frame_timestamps_arr(main_frame_arr, detic_dict, frame_sfs_arr, timestamps_sfs_arr)
+
+  #stitch panorama using specified frames
+  src_list = []
+  for i in range(len(src_index_list)):
+     src_list.append(main_frame_arr[src_index_list[i]])
+  dst = main_frame_arr[dst_index]
+  kp_dst, des_dst = get_keypoints_descriptors(dst)
+  transf_list = []
+  for i in range(len(src_list)):
+    kp_src, des_src = get_keypoints_descriptors(src_list[i])
+    matches = feature_matching(des_src, des_dst)
+    transf = get_homography_matrix(src_list[i], dst, kp_src, kp_dst, matches, 4)
+    transf_list.append(transf)
+  dst_pad, warped_src_arr, new_transf_list, anchorX, anchorY = warp_n_with_padding(dst, src_list, transf_list, main_frame_arr)
+  im_arr = get_rgba_im_arr(dst_pad, warped_src_arr)
+  comp_arr = alpha_composite_n_images_parallel(im_arr)
+
+  #prep for object detection visualization
+  transf_index_dict = {}
+  for i in range(len(src_index_list)):
+    transf_index_dict[src_index_list[i]] = new_transf_list[i]
+
+  return comp_arr, frames_timestamps_arr, transf_index_dict
+
 
 
 """ Bounding Box / time
