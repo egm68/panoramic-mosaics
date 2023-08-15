@@ -22,11 +22,13 @@ def get_demo_video_data(url):
     main_frame_arr = video_to_frame_arr(video_path)
     return main_frame_arr
 
+
 def get_demo_detic_data(url):
     data_path = pkg_resources.resource_filename(__name__, url)
     with open(data_path, 'r') as j:
      detic_dict = json.loads(j.read())
     return detic_dict
+
 
 def get_sfs_arr(main_frame_arr):
   frame_sfs_arr = []
@@ -36,6 +38,7 @@ def get_sfs_arr(main_frame_arr):
     sfs = sfs + (1/15)
   return frame_sfs_arr
 
+
 def get_timestamp_arr(detic_dict):
   timestamps_sfs_arr = []
   start_timestamp = detic_dict[0]["timestamp"]
@@ -44,6 +47,7 @@ def get_timestamp_arr(detic_dict):
     sec_from_start = get_sec_from_start(current_timestamp, start_timestamp)
     timestamps_sfs_arr.append(sec_from_start)
   return timestamps_sfs_arr
+
 
 def get_frame_timestamps_arr(main_frame_arr, detic_dict, frame_sfs_arr, timestamps_sfs_arr):
   frames_timestamps_arr = []
@@ -56,6 +60,7 @@ def get_frame_timestamps_arr(main_frame_arr, detic_dict, frame_sfs_arr, timestam
     timestamp = detic_dict[target_idx]["timestamp"]
     frames_timestamps_arr.append(timestamp)
   return frames_timestamps_arr
+
 
 #video from camera starts with 760 width 428 height
 def video_to_frame_arr(video_path):
@@ -90,8 +95,6 @@ def get_keypoints_descriptors(image):
   return(kp, des)
 
 
-
-
 def feature_matching(des, des2):
   FLANN_INDEX_KDTREE = 1
   index_params = dict(algorithm = FLANN_INDEX_KDTREE, trees = 5)
@@ -104,7 +107,6 @@ def feature_matching(des, des2):
       if m.distance < 0.7*n.distance:
           good.append(m)
   return good
-
 
 
 def get_homography_matrix(image, image2, kp, kp2, good, MIN_MATCH_COUNT):
@@ -157,6 +159,29 @@ def get_homography_matrix_old(image, image2, kp, kp2, good, MIN_MATCH_COUNT):
   return M, image3
 
 
+def get_homography_matrix_status(image, image2, kp, kp2, good, MIN_MATCH_COUNT):
+  if len(good)>MIN_MATCH_COUNT:
+      status = 0
+      src_pts = np.float32([ kp[m.queryIdx].pt for m in good ]).reshape(-1,1,2)
+      dst_pts = np.float32([ kp2[m.trainIdx].pt for m in good ]).reshape(-1,1,2)
+      M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC,5.0)
+      if M is not None:
+        matchesMask = mask.ravel().tolist()
+        h = image.shape[0]
+        w = image.shape[1]
+        pts = np.float32([ [0,0],[0,h-1],[w-1,h-1],[w-1,0] ]).reshape(-1,1,2)
+        dst = cv2.perspectiveTransform(pts,M)
+      else:
+        status = 1
+        matchesMask = None
+        M = []
+  else:
+      status = 1
+      matchesMask = None
+      M = []
+  return M, status
+
+
 def warpTwoImages(img1, img2, H):
     '''warp img2 to img1 with homography matrix H'''
     h1,w1 = img1.shape[:2]
@@ -175,7 +200,6 @@ def warpTwoImages(img1, img2, H):
     return result
 
 
-
 #save array of frames to video 
 def save_to_video(output_frame_arr, fps, output_path):
   height,width,layers=output_frame_arr[0].shape
@@ -183,7 +207,6 @@ def save_to_video(output_frame_arr, fps, output_path):
   for j in range(len(output_frame_arr)):
     video.write(output_frame_arr[j])
   video.release()
-
 
 
 #resize all frames in an array to the same resolution (specify desired width and height as parameters)
@@ -272,8 +295,6 @@ def warpPerspectivePadded(src, dst, transf):
     return dst_pad, warped, dest_pad_pre_warp
 
 
-
-
 #warps a single point from one plane to another given a homography matrix M
 def warp_point(x, y, M):
     d = M[2][0] * x + M[2][1] * y + M[2][2]
@@ -282,8 +303,6 @@ def warp_point(x, y, M):
         int((M[0, 0] * x + M[0, 1] * y + M[0, 2]) / d), # x
         int((M[1, 0] * x + M[1, 1] * y + M[1, 2]) / d), # y
     )
-
-
 
 
 #this is like warpPerspectivePadded but for N frames instead of 2
@@ -359,6 +378,60 @@ def warp_n_with_padding(dst, src_list, transf_list, main_frame_arr):
   return dst_pad, warped_src_arr, new_transf_list, anchorX, anchorY
 
 
+def warp_2_with_padding_THRESHOLD(dst, src, transf, xThreshold, yThreshold):
+
+  minMaxXY_arr = []
+  dst_sz = list(dst.shape)
+
+  src_h, src_w = src.shape[:2]
+  lin_homg_pts = np.array([[0, src_w, src_w, 0], [0, 0, src_h, src_h], [1, 1, 1, 1]])
+  trans_lin_homg_pts = transf.dot(lin_homg_pts)
+  trans_lin_homg_pts /= trans_lin_homg_pts[2,:]
+
+  minX = np.min(trans_lin_homg_pts[0,:])
+  minY = np.min(trans_lin_homg_pts[1,:])
+  maxX = np.max(trans_lin_homg_pts[0,:])
+  maxY = np.max(trans_lin_homg_pts[1,:])
+
+  if (maxX - minX) < xThreshold and (maxY - minY) < yThreshold:
+    status = 0
+    pad_sz0 = np.round(np.maximum(dst_sz[0], maxY) - np.minimum(0, minY)).astype(int)
+    pad_sz1 = np.round(np.maximum(dst_sz[1], maxX) - np.minimum(0, minX)).astype(int)
+
+    minMaxXY_arr.append([minX, minY, maxX, maxY])
+
+    # calculate the needed padding and create a blank image to place dst within
+    pad_sz = dst_sz.copy() # to get the same number of channels
+    pad_sz[0] = pad_sz0
+    pad_sz[1] = pad_sz1
+    dst_pad = np.zeros(pad_sz, dtype=np.uint8)
+
+    #add translation to ALL transformation matrices to shift to positive values
+    anchorX, anchorY = 0, 0
+    transl_transf = np.eye(3,3)
+    if minX < 0:
+        anchorX = np.round(-minX).astype(int)
+        transl_transf[0,2] += anchorX
+    if minY < 0:
+        anchorY = np.round(-minY).astype(int)
+        transl_transf[1,2] += anchorY
+    new_transf = transl_transf.dot(transf)
+    new_transf /= new_transf[2,2]
+
+    dst_pad[anchorY:anchorY+dst_sz[0], anchorX:anchorX+dst_sz[1]] = dst
+
+    warped_src = cv2.warpPerspective(src, new_transf, (pad_sz[1],pad_sz[0]), borderMode=cv2.BORDER_CONSTANT, borderValue=(0, 0, 0))
+
+  else:
+    status = 1
+    dst_pad = []
+    warped_src = []
+    new_transf = []
+    anchorX = -1
+    anchorY = -1
+
+  return status, dst_pad, warped_src, new_transf, anchorX, anchorY
+
 
 #converts all the warped + translated pieces of the panorama from RGB to RGBA images (you'll need the alpha channel [which sets opacity] for compositing)
 def get_rgba_im_arr(dst_pad, warped_src_arr):  
@@ -376,7 +449,6 @@ def get_rgba_im_arr(dst_pad, warped_src_arr):
   return im_arr
 
 
-
 #converts an array containing an RGB image to an array containing an RGBA image (adds alpha channel)
 def rgba_to_rgb(comp_arr):
   im = Image.fromarray((comp_arr).astype(np.uint8))
@@ -391,8 +463,6 @@ def rgb_to_rgba(im):
   im = im.convert('RGBA')
   im = np.asarray(im)
   return im
-
-
 
 
 #this function is like. the slowest possible way to do this. Will be updating soon
@@ -431,8 +501,6 @@ def alpha_composite_n_images(im_arr):
     comp.append(comp_inner)
   comp_arr = np.array(comp)
   return comp_arr
-
-
 
 
 @njit(parallel=True)
@@ -476,7 +544,6 @@ def alpha_composite_n_images_parallel(im_arr):
     return comp
 
 
-
 def alpha_composite_two(im, im2):
   comp = []
   #np.zeros((im.shape[0], im.shape[1], im.shape[2]))
@@ -501,6 +568,18 @@ def alpha_composite_two(im, im2):
     comp.append(comp_inner)
   return comp
 
+
+def composite_2_images_NO_BLENDING_VECTORIZED(im_arr):
+  # panorama so far/dst values
+  default = rgba_to_rgb(im_arr[0].copy())
+  # new frame/src values
+  override = rgba_to_rgb(im_arr[1].copy())
+
+  override_is_not_zero =  np.logical_not(np.equal(np.repeat(override.sum(axis=2)[:, :, np.newaxis], 3, axis=2), np.full(np.repeat(override.sum(axis=2)[:, :, np.newaxis], 3, axis=2).shape, 0)))
+  default_IS_zero =  np.equal(np.repeat(default.sum(axis=2)[:, :, np.newaxis], 3, axis=2), np.full(np.repeat(default.sum(axis=2)[:, :, np.newaxis], 3, axis=2).shape, 0))
+  a = np.array(np.where((default_IS_zero) & (override_is_not_zero), override, default))
+
+  return a
 
 
 #warps panorama back to rectangle after compositing. Doesn't work for every case yet
@@ -598,8 +677,6 @@ def warp_back_to_rect_up(og_src, org_dst, final_width, final_height, anchorX, an
   return rect, homography_matrix
 
 
-
-
 #crops any fully transparent rows or columns off an image
 def crop_transparent(comp_arr):
   col_sums = np.sum(comp_arr, axis = 0)
@@ -609,7 +686,6 @@ def crop_transparent(comp_arr):
   del_rows_list = np.where(row_sums == 0)[0]
   comp_arr = np.delete(comp_arr, del_rows_list, 0)
   return comp_arr
-
 
 
 #this is a helper function used for matching the video frames to object detection outputs
@@ -666,7 +742,6 @@ def getClosest(val1, val2, target):
         return val2
     else:
         return val1
-
 
 
 def get_sec_from_start(current_timestamp, start_timestamp):
@@ -934,6 +1009,53 @@ def stitch_frames(main_frame_arr, detic_dict, src_index_list, dst_index):
   return comp_arr, frames_timestamps_arr, transf_index_dict, anchorX, anchorY
 
 
+def stitch_frames_DETIC(current_frame_idx, start_idx, final_idx, window_size, skip_size, xThreshold, yThreshold, main_frame_arr, blending_type): #NEEDS TO ACCOUNT FOR FRAMES WITHOUT ENOUGH MATCHES AND EACH END
+
+  src_idxs = []
+  prev_comp_arr = []
+  status_arr = []
+
+  #get indices of frames to stitch within window, in correct order (t+1, t-1, t+2, t-2, etc)
+  for i in range(skip_size, window_size + skip_size, skip_size):
+    if current_frame_idx + i < final_idx:
+      src_idxs.append(current_frame_idx + i)
+    if i - 1 < current_frame_idx:
+      src_idxs.append(current_frame_idx - i)
+
+  dst = main_frame_arr[current_frame_idx - start_idx]
+
+  for i in range(len(src_idxs)):
+    src = main_frame_arr[src_idxs[i] - start_idx]
+    kp_dst, des_dst = get_keypoints_descriptors(dst)
+    kp_src, des_src = get_keypoints_descriptors(src)
+    matches = feature_matching(des_src, des_dst)
+    transf, status = get_homography_matrix_status(dst, src, kp_src, kp_dst, matches, 4)
+    status_arr.append(status)
+
+    if status == 0 and blending_type == 'no_blending':
+      status, dst_pad, warped_src, new_transf, anchorX, anchorY = warp_2_with_padding_THRESHOLD(dst, src, transf, xThreshold, yThreshold)
+      if status == 0:
+        im_arr = get_rgba_im_arr(dst_pad, [warped_src])
+        comp_arr = composite_2_images_NO_BLENDING_VECTORIZED(im_arr)
+        dst = rgba_to_rgb(comp_arr.copy())
+        prev_comp_arr = comp_arr
+      elif status == 1:
+        comp_arr = prev_comp_arr
+        if isinstance(comp_arr, list):
+          dst = comp_arr.copy()
+        else:
+          dst = rgba_to_rgb(comp_arr.copy())
+    elif status == 1:
+      comp_arr = prev_comp_arr
+      if isinstance(comp_arr, list):
+          dst = comp_arr.copy()
+      else:
+          dst = rgba_to_rgb(comp_arr.copy())
+
+    print(i)
+
+  return comp_arr, status_arr, src_idxs
+
 
 """ Bounding Box / time
 - at every time step, draw all bounding boxes from the beginning of the vis to now
@@ -952,15 +1074,16 @@ def box_color(time_color, time_from_present, max_time=5):  # assumed seconds
     hex_color = time_color[round(color_factor * (len(time_color)-1))]
     return rgb_to_bgr(hex_to_rgb(hex_color)) + [round(color_factor*255)]  # add alpha scaler to return
 
+
 def hex_to_rgb(hex_str):
     """ helper to convert rgb hex to its individual values in a list 
     ref: https://stackoverflow.com/questions/29643352/converting-hex-to-rgb-value-in-python """
     h = hex_str.lstrip('#')
     return list(int(h[i:i+2], 16) for i in (0, 2, 4))
 
+
 def rgb_to_bgr(lst):  # pano works in bgr for some reason
     return [lst[2], lst[1], lst[0]]
-
 
 
 """ Resources:
@@ -975,16 +1098,19 @@ def draw_side_box(image, x,y, w,h, color, thickness):
     image = cv2.line(image, (x,h), (x+line_len1, h), color, thickness) 
     return cv2.line(image, (x,(y+h)//2), (x,-line_len1+(y+h)//2), color, thickness)
 
+
 def draw_center_point(image, x,y, w,h, color, thickness):
     rect_size =  3  # size of boxes that denote corners
     newx = (x+w)//2
     newy = (y+h)//2
     return cv2.rectangle(image, (newx,newy), (newx+rect_size, newy+rect_size), color, rect_size)
 
+
 def draw_center_point_updated(image, x,y, w,h, color, thickness):
     newx = ((w-x)//2)+x
     newy = ((h-y)//2)+y
     return cv2.circle(image,(newx,newy), 5, color, -1)
+
 
 def draw_box_corners(image, x,y, w,h, color, thickness):
     rect_size =  2  # size of boxes that denote corners
@@ -1015,13 +1141,16 @@ def draw_box_frame(image, x,y, w,h, color, thickness):
 def draw_box(image, x,y, w,h, color, thickness):
     return cv2.rectangle(image, (x,y), (w,h), color, thickness)
 
+
 def draw_line(image, x,y, w,h, color, thickness):
     # basic func to draw line from (x,y) to (w,h)
     return cv2.line(image, (x,y), (w,h), color, thickness)
 
+
 def draw_arrow(image, x,y, w,h, color, thickness):
   tip_length = (1 / math.dist([x,y], [w,h])) * 20
   return cv2.arrowedLine(image, (x,y), (w,h), color, thickness, 5, 0, tip_length)
+
 
 def get_closer_further(x, y, t): #determines which of points x and y is closer to t
   if math.dist(x, t) < math.dist(y, t):
@@ -1032,6 +1161,7 @@ def get_closer_further(x, y, t): #determines which of points x and y is closer t
     further = x
   return closer, further
 
+
 def get_closest(array_of_points, target):
   dist = 10000000000000000000000000000
   for i in range(len(array_of_points)):
@@ -1041,6 +1171,7 @@ def get_closest(array_of_points, target):
       closest_index = i
   array_of_points.pop(closest_index)
   return closest, array_of_points, closest_index
+
 
 """
 
