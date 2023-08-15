@@ -1,4 +1,5 @@
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1a_U4QmuLPnrFZvHjSu_vRImLHaS63rKC?usp=sharing) [![Paper](https://img.shields.io/badge/read%20the-paper-blueviolet)](https://github.com/egm68/panoramic-mosaics/blob/main/panoMosaics_report.pdf) 
+[![Presentation](https://img.shields.io/badge/watch%20the-presentation-brightgreen)](https://youtu.be/Ww96fFR-O4I)
 
 # panoMosaics
 panoMosaics is a Python library that allows users to create enhanced object detection visualizations that capture multiple timesteps using panoramic mosaics. 
@@ -23,7 +24,7 @@ with open('2023.03.29-17.39.21-detic:image.json', 'r') as j:
      detic_dict = json.loads(j.read())
 
 #stitch panorama using specified frames
-comp_arr, frames_timestamps_arr, transf_index_dict, anchorX, anchorY = stitch_frames(main_frame_arr, detic_dict, [160], 196)
+comp_arr, frames_timestamps_arr, transf_index_dict, anchorX, anchorY = stitch_frames(main_frame_arr, detic_dict, [160, 169, 178, 187], 196)
 
 #add object detection visualization  
 pano_with_bounding_boxes = panoMosaics.draw_all_bounding_boxes_for_given_indices([160, 196], frames_timestamps_arr, 
@@ -35,10 +36,10 @@ pano_with_bounding_boxes = panoMosaics.draw_all_bounding_boxes_for_given_indices
 Output:
 
 
-![a panoramic mosaic output by above code block](https://github.com/egm68/panoramic-mosaics/blob/main/results/final_pano_frames/pano-with-arrows-colorobject.png?raw=true)
+![a panoramic mosaic output by above code block](https://github.com/egm68/panoramic-mosaics/blob/main/results/final_pano_frames/pano-arrows-colorobjects-5frames.png?raw=true)
 
 ### Try it out yourself!
 Try our demo on Colab [here](https://colab.research.google.com/drive/1a_U4QmuLPnrFZvHjSu_vRImLHaS63rKC?usp=sharing).
 
 ### Want to learn more?
-Read our project report [here](https://github.com/egm68/panoramic-mosaics/blob/main/panoMosaics_report.pdf). 
+Read our project report [here](https://github.com/egm68/panoramic-mosaics/blob/main/panoMosaics_report.pdf) and watch the accompanying presentation [here](https://youtu.be/Ww96fFR-O4I).
