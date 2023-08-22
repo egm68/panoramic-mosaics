@@ -1025,7 +1025,7 @@ def stitch_frames_DETIC(current_frame_idx, start_idx, final_idx, window_size, sk
   dst = main_frame_arr[current_frame_idx - start_idx]
 
   for i in range(len(src_idxs)):
-    src = main_frame_arr[src_idxs[i] - start_idx]
+    src = np.array(main_frame_arr[src_idxs[i] - start_idx])
     kp_dst, des_dst = get_keypoints_descriptors(dst)
     kp_src, des_src = get_keypoints_descriptors(src)
     matches = feature_matching(des_src, des_dst)
