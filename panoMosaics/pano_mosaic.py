@@ -212,7 +212,6 @@ def save_to_video(output_frame_arr, fps, output_path):
 #resize all frames in an array to the same resolution (specify desired width and height as parameters)
 def resize_all(pano_frames_arr, width, height):
   resized_pano_arr = []
-  height,width,layers=pano_frames_arr[0].shape
   for i in range(len(pano_frames_arr)):
     resized_pano_arr.append(cv2.resize(pano_frames_arr[i], (width, height)))
   return resized_pano_arr
